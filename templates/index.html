@@ -1,0 +1,45 @@
+{% extends "base.html"%}
+{% block title %}Inicio{% endblock %}
+
+{% block content %}
+
+</style>
+<section class="hero-section">
+        <div class="hero-content">
+            <img src="{{ url_for('static', filename='portada.png') }}" alt="portada inicio" style="width: 100%; height: 250px; object-fit: cover;">
+            <h1>Aroma del Día</h1>
+            <p>Tu pausa perfecta, el sabor que alegra tu día.</p>
+            <a href="{{ url_for('about') }}" class="btn">Conoce Nuestra Historia</a>
+        </div>
+    </section>
+
+    <section class="featured-section">
+        <h2>Nuestros Favoritos</h2>
+        <div class="featured-items">
+            <div class="item">
+                <img src="{{ url_for('static', filename='latte.png') }}" alt="Café Latte">
+                <h3>Latte Art</h3>
+                <p>Nuestro clásico Latte, preparado con amor y arte.</p>
+            </div>
+            <div class="item">
+                <img src="{{ url_for('static', filename='pastel_chocolate.png') }}" alt="Pastel de Chocolate">
+                <h3>Pastel de Chocolate</h3>
+                <p>El postre ideal para acompañar tu café.</p>
+            </div>
+            <div class="item">
+                <img src="{{ url_for('static', filename='sanduitch.png') }}"  alt="Sándwich del Día">
+                <h3>Sándwich Especial</h3>
+                <p>Ingredientes frescos y sabores sorprendentes.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="info-section">
+        <div class="info-box">
+            <h3>Visítanos</h3>
+            <p><strong>Dirección:</strong> Joya de los Sachas</p>
+            <p><strong>Horario:</strong> Lunes a Viernes: 8:00 - 20:00 <br> Sábados y Domingos: 9:00 - 18:00</p>
+        </div>
+    </section>
+
+{% endblock %}

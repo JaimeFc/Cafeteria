@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Contacto{% endblock %}
+
+{% block content %}
+
+
+<section id="contacto">
+  <h2>Contáctanos</h2>
+  <p>¿Tienes alguna pregunta o sugerencia? ¡Nos encantaría escucharte!</p>
+
+  <form action="/enviar-mensaje" method="POST">
+    <label for="nombre">Nombre:</label>
+    <input type="text" id="nombre" name="nombre" required>
+
+    <label for="email">Correo electrónico:</label>
+    <input type="email" id="email" name="email" required>
+
+    <label for="mensaje">Mensaje:</label>
+    <textarea id="mensaje" name="mensaje" rows="5" required></textarea>
+
+    <button type="submit">Enviar</button>
+  </form>
+
+  <div class="info-contacto">
+    <p><strong>Dirección:</strong> Calle Principal, Joya de los Sachas, Orellana</p>
+    <p><strong>Teléfono:</strong> +593 988360712</p>
+    <p><strong>Email:</strong> contacto@aromadeldia.com</p>
+    <p><strong>Instagram:</strong> @aromadeldia</p>
+  </div>
+</section>
+
+
+
+{% endblock %}
