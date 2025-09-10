@@ -1,21 +1,29 @@
-# app.py
 from flask import Flask, render_template, redirect, url_for, flash, request
+from datetime import datetime
 from models import db, Producto
 from forms import ProductoForm
 from inventory import Inventario
 
+# Declara la instancia de la aplicación Flask y la configuración
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///inventario.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'dev-secret-key'
+app.config['SECRET_KEY'] = 'dev-secret-key'  # ¡Cambia esto en producción!
 
+# Inicializa la base de datos
 db.init_app(app)
 
+# Inyectar "now" para usar {{ now().year }} en plantillas si quieres
+@app.context_processor
+def inject_now():
+    return {'now': datetime.utcnow}
+
+# Inicializa el inventario en memoria al iniciar la aplicación
 with app.app_context():
     db.create_all()
     inventario = Inventario.cargar_desde_bd()
 
-# --- Rutas existentes ---
+# --- Rutas de páginas principales ---
 @app.route('/')
 def index():
     return render_template('index.html', title='Inicio')
@@ -28,15 +36,18 @@ def about():
 def contacto():
     return render_template('contacto.html', title='Contacto')
 
-# --- Rutas de Productos ---
+
+# --- Rutas de Productos (Inventario) ---
 @app.route('/productos')
 def listar_productos():
+    """Muestra la lista de productos y permite la búsqueda."""
     q = request.args.get('q', '').strip()
     productos = inventario.buscar_por_nombre(q) if q else inventario.listar_todos()
     return render_template('products/list.html', title='Productos', productos=productos, q=q)
 
 @app.route('/productos/nuevo', methods=['GET', 'POST'])
 def crear_producto():
+    """Maneja la creación de un nuevo producto."""
     form = ProductoForm()
     if form.validate_on_submit():
         try:
@@ -53,6 +64,7 @@ def crear_producto():
 
 @app.route('/productos/<int:pid>/editar', methods=['GET', 'POST'])
 def editar_producto(pid):
+    """Maneja la edición de un producto existente."""
     prod = Producto.query.get_or_404(pid)
     form = ProductoForm(obj=prod)
     if form.validate_on_submit():
@@ -71,6 +83,7 @@ def editar_producto(pid):
 
 @app.route('/productos/<int:pid>/eliminar', methods=['POST'])
 def eliminar_producto(pid):
+    """Maneja la eliminación de un producto."""
     ok = inventario.eliminar(pid)
     flash('Producto eliminado.' if ok else 'Producto no encontrado.', 'info' if ok else 'warning')
     return redirect(url_for('listar_productos'))
