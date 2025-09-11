@@ -4,6 +4,7 @@
 {% block content %}
 <h1>Gestión de Inventario</h1>
 <a href="{{ url_for('crear_producto') }}" class="btn">Añadir Nuevo Producto</a>
+<a href="{{ url_for('exportar_json') }}" class="btn" style="background-color: #3b5998;">Exportar a JSON</a>
 
 <form class="search-form" method="GET" action="{{ url_for('listar_productos') }}">
     <input type="text" name="q" placeholder="Buscar por nombre..." value="{{ q }}">

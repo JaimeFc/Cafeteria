@@ -1,5 +1,6 @@
 # inventory.py
 from models import db, Producto
+import json
 
 class Inventario:
     def __init__(self, productos_dict=None):
@@ -10,6 +11,21 @@ class Inventario:
     def cargar_desde_bd(cls):
         productos = Producto.query.all()
         productos_dict = {p.id: p for p in productos}
+        return cls(productos_dict)
+
+    @classmethod
+    def cargar_desde_json(cls, ruta_archivo):
+        with open(ruta_archivo, 'r') as f:
+            productos_json = json.load(f)
+        
+        productos_dict = {}
+        for p_json in productos_json:
+            # Crea una instancia de Producto y la añade a la sesión de la BD
+            p = Producto(nombre=p_json['nombre'], cantidad=p_json['cantidad'], precio=p_json['precio'])
+            db.session.add(p)
+            db.session.commit()
+            productos_dict[p.id] = p
+        
         return cls(productos_dict)
 
     def agregar(self, nombre: str, cantidad: int, precio: float) -> Producto:

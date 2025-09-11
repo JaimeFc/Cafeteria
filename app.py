@@ -1,8 +1,9 @@
-from flask import Flask, render_template, redirect, url_for, flash, request
+from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from datetime import datetime
 from models import db, Producto
 from forms import ProductoForm
 from inventory import Inventario
+import json
 
 # Declara la instancia de la aplicación Flask y la configuración
 app = Flask(__name__)
@@ -88,6 +89,28 @@ def eliminar_producto(pid):
     flash('Producto eliminado.' if ok else 'Producto no encontrado.', 'info' if ok else 'warning')
     return redirect(url_for('listar_productos'))
 
+# --- Nuevas rutas para JSON ---
+@app.route('/productos/exportar-json')
+def exportar_json():
+    """Exporta todos los productos del inventario a un archivo JSON."""
+    productos = Producto.query.all()
+    lista_productos = [
+        {'id': p.id, 'nombre': p.nombre, 'cantidad': p.cantidad, 'precio': p.precio}
+        for p in productos
+    ]
+    # Retorna un JSON con los productos
+    return jsonify(lista_productos)
+
+@app.route('/productos/ver-json')
+def productos_json():
+    """Lee y muestra los productos desde un archivo JSON."""
+    try:
+        with open('productos.json', 'r') as f:
+            productos = json.load(f)
+        return render_template('products/list.html', title='Productos (JSON)', productos=productos)
+    except FileNotFoundError:
+        flash('El archivo productos.json no se encontró.', 'danger')
+        return redirect(url_for('listar_productos'))
 
 if __name__ == '__main__':
     app.run(debug=True)
