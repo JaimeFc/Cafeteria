@@ -1,30 +1,17 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
-from datetime import datetime
-from models import db, Producto
+from flask import Flask, render_template, request, redirect, url_for, flash
+from conexion.conexion import conexion, cerrar_conexion
 from forms import ProductoForm
-from inventory import Inventario
-import json
+from datetime import datetime
 
-# Declara la instancia de la aplicación Flask y la configuración
+
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///inventario.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'dev-secret-key'  # ¡Cambia esto en producción!
+app.config['SECRET_KEY'] = 'dev-secret-key' 
 
-# Inicializa la base de datos
-db.init_app(app)
-
-# Inyectar "now" para usar {{ now().year }} en plantillas si quieres
+# Inyectar "now" para usar {{ now().year }} en templates si quieres
 @app.context_processor
 def inject_now():
     return {'now': datetime.utcnow}
 
-# Inicializa el inventario en memoria al iniciar la aplicación
-with app.app_context():
-    db.create_all()
-    inventario = Inventario.cargar_desde_bd()
-
-# --- Rutas de páginas principales ---
 @app.route('/')
 def index():
     return render_template('index.html', title='Inicio')
@@ -37,80 +24,100 @@ def about():
 def contacto():
     return render_template('contacto.html', title='Contacto')
 
+# En tu archivo app.py
+from flask import jsonify
 
-# --- Rutas de Productos (Inventario) ---
+# ... (otras rutas como la de listar_productos, crear_producto, etc.)
+
+# Rutas de productos
+# Listar / Buscar
 @app.route('/productos')
 def listar_productos():
-    """Muestra la lista de productos y permite la búsqueda."""
     q = request.args.get('q', '').strip()
-    productos = inventario.buscar_por_nombre(q) if q else inventario.listar_todos()
+    conn = conexion()
+    cur = conn.cursor(dictionary=True)
+    # Usando alias para que los nombres de las columnas coincidan con el HTML
+    if q:
+        cur.execute("SELECT ID_Producto AS id, Nombre AS nombre, Cantidad AS cantidad, precio FROM productos WHERE Nombre LIKE %s", (f"%{q}%",))
+    else:
+        cur.execute("SELECT ID_Producto AS id, Nombre AS nombre, Cantidad AS cantidad, precio FROM productos")
+    productos = cur.fetchall()
+    cerrar_conexion(conn)
     return render_template('products/list.html', title='Productos', productos=productos, q=q)
 
+# Crear
 @app.route('/productos/nuevo', methods=['GET', 'POST'])
 def crear_producto():
-    """Maneja la creación de un nuevo producto."""
     form = ProductoForm()
     if form.validate_on_submit():
+        conn = conexion()
         try:
-            inventario.agregar(
-                nombre=form.nombre.data,
-                cantidad=form.cantidad.data,
-                precio=form.precio.data
+            cur = conn.cursor()
+            # Consulta para insertar en la tabla 'productos'
+            cur.execute(
+                "INSERT INTO productos (Nombre, Cantidad, precio) VALUES (%s, %s, %s)",
+                (form.nombre.data, form.cantidad.data, float(form.precio.data))
             )
+            conn.commit()
             flash('Producto agregado correctamente.', 'success')
             return redirect(url_for('listar_productos'))
-        except ValueError as e:
-            form.nombre.errors.append(str(e))
+        except Exception as e:
+            conn.rollback()
+            form.nombre.errors.append('No se pudo guardar: ' + str(e))
+        finally:
+            cerrar_conexion(conn)
     return render_template('products/form.html', title='Nuevo producto', form=form, modo='crear')
 
+# editar producto existente
 @app.route('/productos/<int:pid>/editar', methods=['GET', 'POST'])
 def editar_producto(pid):
-    """Maneja la edición de un producto existente."""
-    prod = Producto.query.get_or_404(pid)
-    form = ProductoForm(obj=prod)
+    conn = conexion()
+    cursor = conn.cursor(dictionary=True)
+    # Usando alias para que los nombres de las columnas coincidan con el formulario
+    cursor.execute("SELECT ID_Producto AS id, Nombre AS nombre, Cantidad AS cantidad, precio FROM productos WHERE ID_Producto = %s", (pid,))
+    prod = cursor.fetchone()
+    if not prod:
+        cerrar_conexion(conn)
+        return "Producto no encontrado", 404
+    
+    # Se pasan los datos al formulario como un diccionario
+    # Se corrige la clave para que coincida con la consulta SQL
+    form = ProductoForm(data={'nombre': prod['nombre'], 'cantidad': prod['cantidad'], 'precio': prod['precio']})
+    
     if form.validate_on_submit():
+        nombre = form.nombre.data.strip()
+        cantidad = form.cantidad.data
+        precio = form.precio.data
         try:
-            inventario.actualizar(
-                id=pid,
-                nombre=form.nombre.data,
-                cantidad=form.cantidad.data,
-                precio=form.precio.data
-            )
-            flash('Producto actualizado.', 'success')
+            # Consulta para actualizar la tabla 'productos'
+            cursor.execute("UPDATE productos SET Nombre=%s, Cantidad=%s, precio=%s WHERE ID_Producto=%s", 
+                           (nombre, cantidad, precio, pid))
+            conn.commit()
+            flash('Producto actualizado correctamente.', 'success')
             return redirect(url_for('listar_productos'))
-        except ValueError as e:
-            form.nombre.errors.append(str(e))
-    return render_template('products/form.html', title='Editar producto', form=form, modo='editar')
+        except Exception as e:
+            conn.rollback()
+            form.nombre.errors.append('Error al actualizar el producto. Puede que ya exista otro con ese nombre.')
+        finally:
+            cerrar_conexion(conn)
+            
+    cerrar_conexion(conn)
+    return render_template('products/form.html', title='Editar producto', form=form, modo='editar', pid=pid)
 
+# eliminar producto
 @app.route('/productos/<int:pid>/eliminar', methods=['POST'])
 def eliminar_producto(pid):
-    """Maneja la eliminación de un producto."""
-    ok = inventario.eliminar(pid)
-    flash('Producto eliminado.' if ok else 'Producto no encontrado.', 'info' if ok else 'warning')
+    conn = conexion()
+    cursor = conn.cursor()
+    # Consulta para eliminar en la tabla 'productos'
+    cursor.execute("DELETE FROM productos WHERE ID_Producto = %s", (pid,))
+    if cursor.rowcount > 0:
+        conn.commit()
+        flash('Producto eliminado correctamente.', 'success')
+    else:
+        flash('Producto no encontrado.', 'warning')
+    cerrar_conexion(conn)
     return redirect(url_for('listar_productos'))
-
-# --- Nuevas rutas para JSON ---
-@app.route('/productos/exportar-json')
-def exportar_json():
-    """Exporta todos los productos del inventario a un archivo JSON."""
-    productos = Producto.query.all()
-    lista_productos = [
-        {'id': p.id, 'nombre': p.nombre, 'cantidad': p.cantidad, 'precio': p.precio}
-        for p in productos
-    ]
-    # Retorna un JSON con los productos
-    return jsonify(lista_productos)
-
-@app.route('/productos/ver-json')
-def productos_json():
-    """Lee y muestra los productos desde un archivo JSON."""
-    try:
-        with open('productos.json', 'r') as f:
-            productos = json.load(f)
-        return render_template('products/list.html', title='Productos (JSON)', productos=productos)
-    except FileNotFoundError:
-        flash('El archivo productos.json no se encontró.', 'danger')
-        return redirect(url_for('listar_productos'))
 
 if __name__ == '__main__':
     app.run(debug=True)
