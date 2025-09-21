@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from conexion.conexion import conexion, cerrar_conexion
 from forms import ProductoForm
 from datetime import datetime
-
+from werkzeug.security import generate_password_hash
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dev-secret-key' 
@@ -44,6 +44,41 @@ def listar_productos():
     productos = cur.fetchall()
     cerrar_conexion(conn)
     return render_template('products/list.html', title='Productos', productos=productos, q=q)
+
+@app.route('/registro', methods=['GET', 'POST'])
+def registro():
+    if request.method == 'POST':
+        nombre = request.form['nombre']
+        email = request.form['email']
+        password = request.form['password']
+        password_hash = generate_password_hash(password)
+
+        conexion = conexion()
+        cursor = conexion.cursor()
+        cursor.execute("INSERT INTO usuarios (nombre, email, password) VALUES (%s, %s, %s)",
+                       (nombre, email, password_hash))
+        conexion.commit()
+        flash('Usuario registrado correctamente')
+        return redirect(url_for('login'))
+    return render_template('registro.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        usuario = usuario.obtener_por_email(email)
+
+        if usuario and usuario.verificar_password(password):
+            login(usuario)
+            flash('Inicio de sesión exitoso')
+            return redirect(url_for('protegido'))
+        else:
+            flash('Email o contraseña incorrectos')
+    
+    return render_template('login.html')
+
 
 # Crear
 @app.route('/productos/nuevo', methods=['GET', 'POST'])
