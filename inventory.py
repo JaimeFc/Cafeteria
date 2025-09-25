@@ -1,5 +1,5 @@
 # inventory.py
-from models import db, Producto
+from models.models import db, Producto
 import json
 
 class Inventario:

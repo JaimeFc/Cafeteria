@@ -1,6 +1,6 @@
 from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from datetime import datetime
-from models import db, Producto
+from models.models import db, Producto
 from forms import ProductoForm
 from inventory import Inventario
 import json
