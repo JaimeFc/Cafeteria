@@ -316,3 +316,42 @@ table tbody tr:hover {
     color: #995c00;
     border: 1px solid #995c00;
 }
+
+
+.nav {
+    display: flex;
+    /* CAMBIO CLAVE: Usa flex-start para pegar todos los bloques al inicio (izquierda) */
+    justify-content: flex-start; 
+    align-items: center; /* Centrado vertical */
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px; 
+    gap: 30px; /* Incrementamos ligeramente este gap para separar el bloque principal del bloque de autenticación */
+}
+
+/* 2. Contenedor de la izquierda (Logo + Enlaces principales) */
+.nav-left {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 15px; 
+}
+
+/* 3. Contenedor de la derecha (Autenticación) */
+.nav-right {
+    /* Mantenemos el display flex aquí */
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    /* Esta es una corrección importante: necesitas que el bloque de autenticación 
+       esté empujado completamente a la derecha. 
+       Añadimos 'margin-left: auto' al contenedor derecho. */
+    margin-left: auto;
+}
+
+/* 4. Estilo para el logotipo */
+.logo-link {
+    display: flex;
+    align-items: center;
+    padding: 0; 
+}

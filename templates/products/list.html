@@ -10,8 +10,15 @@
 {#<a href="{{ url_for('exportar_json') }}" class="btn" style="background-color: #3b5998;">Exportar a JSON</a>#}
 
 <form class="search-form" method="GET" action="{{ url_for('listar_productos') }}">
-<input type="text" name="q" placeholder="Buscar por nombre..." value="{{ q }}">
-<button type="submit">Buscar</button>
+    
+    <select name="criterio" id="criterio-busqueda">
+        <option value="nombre" {% if criterio == 'nombre' %}selected{% endif %}>Nombre</option>
+        <option value="id" {% if criterio == 'id' %}selected{% endif %}>ID de Producto</option>
+        <option value="categoria" {% if criterio == 'categoria' %}selected{% endif %}>Categoría</option>
+    </select>
+    
+    <input type="text" name="q" placeholder="Buscar..." value="{{ q or '' }}">
+    <button type="submit">Buscar</button>
 </form>
 
 {% if productos %}
@@ -21,7 +28,7 @@
 <tr>
 <th>ID</th>
 <th>Nombre</th>
-<th>Cantidad</th>
+<th>Categoría</th>  <th>Cantidad</th>
 <th>Precio</th>
 <th>Acciones</th>
 </tr>
@@ -31,7 +38,7 @@
 <tr>
 <td>{{ producto.id }}</td>
 <td>{{ producto.nombre }}</td>
-<td>{{ producto.cantidad }}</td>
+<td>{{ producto.categoria_nombre or 'Sin Categoría' }}</td> <td>{{ producto.cantidad }}</td>
 <td>${{ producto.precio }}</td>
 <td>
 {% if current_user.is_authenticated %}
@@ -48,7 +55,7 @@
 </tbody>
 </table>
 {% else %}
-<p>No hay productos en el inventario.</p>
+<p>No hay productos en el inventario que coincidan con la búsqueda.</p>
 {% endif %}
 
 {% endblock %}

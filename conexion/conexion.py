@@ -1,3 +1,5 @@
+#carpeta conexion
+#conexion.py
 # clase de conexion directa sin sqlalchemy
 import mysql.connector
 from mysql.connector import Error

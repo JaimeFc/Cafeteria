@@ -1,6 +1,8 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError
+from wtforms import StringField, PasswordField, SubmitField, SelectField
+# IMPORTANTE: Añadir los campos numéricos y el validador NumberRange
+from wtforms import IntegerField, DecimalField 
+from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError, NumberRange
 from conexion.conexion import conexion, cerrar_conexion
 
 # Este validador se utiliza para verificar que un campo no esté duplicado en la base de datos
@@ -25,9 +27,35 @@ def valida_email_no_duplicado():
     return _validador
 
 class ProductoForm(FlaskForm):
+    # Función para cargar las opciones de categorías desde la BD
+    def cargar_categorias(self):
+        conn = conexion()
+        cursor = conn.cursor()
+        cursor.execute("SELECT ID_Categoria, NombreCategoria FROM categorias ORDER BY NombreCategoria")
+        choices = [(str(row[0]), row[1]) for row in cursor.fetchall()]
+        cerrar_conexion(conn)
+        choices.insert(0, ('', '--- Seleccione Categoría ---')) 
+        return choices
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.categoria.choices = self.cargar_categorias() 
+
     nombre = StringField('Nombre', validators=[DataRequired(), Length(max=120)])
-    cantidad = StringField('Cantidad', validators=[DataRequired(), Length(max=120)])
-    precio = StringField('Precio', validators=[DataRequired(), Length(max=20)])
+    
+    # MODIFICACIÓN CLAVE: IntegerField y NumberRange para cantidad
+    cantidad = IntegerField('Cantidad', validators=[
+        DataRequired('La cantidad es requerida.'),
+        NumberRange(min=0, message='La cantidad debe ser un número entero positivo o cero.')
+    ])
+    
+    # MODIFICACIÓN CLAVE: DecimalField y NumberRange para precio
+    precio = DecimalField('Precio', validators=[
+        DataRequired('El precio es requerido.'),
+        NumberRange(min=0.01, message='El precio debe ser un valor positivo.')
+    ], places=2) # 'places=2' indica que acepta 2 decimales
+    
+    categoria = SelectField('Categoría', validators=[DataRequired(message='Debe seleccionar una categoría.')]) 
     submit = SubmitField('Guardar')
 
 class RegistroForm(FlaskForm):

@@ -6,27 +6,39 @@
 
 <form method="POST" action="">
     {{ form.csrf_token }}
-    <p>
+    
+    <div class="form-group">
         {{ form.nombre.label }}<br>
-        {{ form.nombre(size=32) }}<br>
+        {{ form.nombre(size=32) }}
         {% for error in form.nombre.errors %}
-            <span style="color: red;">[{{ error }}]</span>
+            <span style="color: red; display: block;">[{{ error }}]</span>
         {% endfor %}
-    </p>
-    <p>
+    </div>
+    
+    <div class="form-group">
         {{ form.cantidad.label }}<br>
-        {{ form.cantidad(size=32) }}<br>
+        {{ form.cantidad(size=32, type="number", step="1", min="0") }} 
         {% for error in form.cantidad.errors %}
-            <span style="color: red;">[{{ error }}]</span>
+            <span style="color: red; display: block;">[{{ error }}]</span>
         {% endfor %}
-    </p>
-    <p>
+    </div>
+    
+    <div class="form-group">
         {{ form.precio.label }}<br>
-        {{ form.precio(size=32) }}<br>
+        {{ form.precio(size=32, type="number", step="0.01", min="0") }}
         {% for error in form.precio.errors %}
-            <span style="color: red;">[{{ error }}]</span>
+            <span style="color: red; display: block;">[{{ error }}]</span>
         {% endfor %}
-    </p>
+    </div>
+
+    <div class="form-group">
+        {{ form.categoria.label }}<br>
+        {{ form.categoria }}
+        {% for error in form.categoria.errors %}
+            <span style="color: red; display: block;">[{{ error }}]</span>
+        {% endfor %}
+    </div>
+    
     <p>{{ form.submit(class="btn") }}</p>
 </form>
 
