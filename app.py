@@ -105,6 +105,19 @@ def logout():
 @app.route('/productos')
 @login_required
 def listar_productos():
+    # --- 1. PARÁMETROS DE PAGINACIÓN ---
+    per_page = 25  # Items por página, según su solicitud
+    try:
+        # Obtener la página actual de los argumentos URL. Si no existe, es 1.
+        page = int(request.args.get('page', 1))
+        if page < 1:
+            page = 1
+    except ValueError:
+        page = 1
+        
+    offset = (page - 1) * per_page
+    # ------------------------------------
+    
     # Obtener el término de búsqueda (q) y el criterio (criterio)
     q = request.args.get('q', '').strip()
     criterio = request.args.get('criterio', 'nombre') # Valor por defecto: 'nombre'
@@ -112,8 +125,8 @@ def listar_productos():
     conn = conexion()
     cursor = conn.cursor(dictionary=True)
 
-    # 1. Definir la consulta base (JOIN para traer el nombre de la categoría)
-    query = """
+    # Definir la consulta SELECT para obtener datos (similar a la original )
+    data_query = """
     SELECT 
         p.ID_Producto AS id, 
         p.Nombre AS nombre, 
@@ -124,48 +137,80 @@ def listar_productos():
     LEFT JOIN categorias c ON p.ID_Categoria = c.ID_Categoria
     """
     
+    # Definir la consulta para CONTAR el total
+    count_query = """
+    SELECT COUNT(p.ID_Producto) AS total
+    FROM productos p
+    LEFT JOIN categorias c ON p.ID_Categoria = c.ID_Categoria
+    """
+ 
     params = ()
+    where_clause = ""
     
-    # 2. Construir la cláusula WHERE basada en el criterio seleccionado
+    # 2. Construir la cláusula WHERE basada en el criterio seleccionado (igual que su código original [cite: 10, 11])
     if q:
         q_like = f"%{q}%" # Para búsquedas parciales (LIKE)
         
         if criterio == 'id' and q.isdigit():
-            # Búsqueda por ID (debe ser un número)
-            query += " WHERE p.ID_Producto = %s"
+            where_clause = " WHERE p.ID_Producto = %s"
             params = (q,)
             
         elif criterio == 'categoria':
-            # Búsqueda por Nombre de Categoría
-            query += " WHERE c.NombreCategoria LIKE %s"
+            where_clause = " WHERE c.NombreCategoria LIKE %s"
             params = (q_like,)
-            
-        elif criterio == 'nombre': # Incluye cualquier otro valor no esperado como 'nombre'
-            # Búsqueda por Nombre de Producto (la opción por defecto)
-            query += " WHERE p.Nombre LIKE %s"
+         
+        elif criterio == 'nombre': 
+            where_clause = " WHERE p.Nombre LIKE %s"
             params = (q_like,)
             
         else:
-            # Si el criterio es ID pero el valor no es número, o hay un criterio inválido
+            # Manejo de búsqueda inválida [cite: 12, 13]
             flash('Búsqueda inválida. Asegúrese de usar un número para buscar por ID.', 'warning')
-            q = '' # Limpiamos q para que liste todos sin error
+            q = '' 
+            params = ()
+            where_clause = "" 
 
-    # 3. Ejecutar la consulta
-    if q or not params: # Ejecuta siempre, incluso si q está vacío (para listar todo)
-        cursor.execute(query, params)
-        productos = cursor.fetchall()
-    else:
-        # En caso de búsqueda inválida que no ejecutó la consulta
-        productos = []
+    # Aplicar la cláusula WHERE a ambas consultas
+    data_query += where_clause
+    count_query += where_clause
+    
+    # 3. Obtener el TOTAL de productos (con el filtro)
+    cursor.execute(count_query, params)
+    total_products = cursor.fetchone()['total']
+    
+    # 4. Calcular el total de páginas
+    import math
+    # math.ceil() asegura que si hay 26 productos, el total_pages sea 2.
+    total_pages = math.ceil(total_products / per_page) 
+    
+    # Ajustar la página si es mayor que el total (para evitar errores)
+    if page > total_pages and total_pages > 0:
+        page = total_pages
+        offset = (page - 1) * per_page
+
+    # 5. Finalizar la consulta de datos con LIMIT y OFFSET
+    data_query += " LIMIT %s OFFSET %s"
+    
+    # Extender los parámetros para incluir LIMIT y OFFSET
+    final_params = params + (per_page, offset)
+
+    # 6. Ejecutar la consulta de datos
+    cursor.execute(data_query, final_params)
+    productos = cursor.fetchall()
 
     cerrar_conexion(conn)
     
-    # MODIFICACIÓN: Pasamos el criterio de búsqueda a la plantilla
+    # 7. Devolver los nuevos datos de paginación a la plantilla
     return render_template('products/list.html', 
                            title='Productos', 
                            productos=productos, 
                            q=q,
-                           criterio=criterio)
+                           criterio=criterio,
+                           # --- DATOS DE PAGINACIÓN ---
+                           page=page,
+                           total_pages=total_pages,
+                           total_products=total_products,
+                           per_page=per_page)
 
 
 # Crear producto

@@ -3,14 +3,15 @@
 
 {% block content %}
 
-<h1>Gestión de Inventario</h1>
-{% if current_user.is_authenticated %}
-<a href="{{ url_for('crear_producto') }}" class="btn">Añadir Nuevo Producto</a>
-{% endif %}
-{#<a href="{{ url_for('exportar_json') }}" class="btn" style="background-color: #3b5998;">Exportar a JSON</a>#}
+<div class="header-container">
+    <h1>Gestión de Inventario</h1>
+    {% if current_user.is_authenticated %}
+    <a href="{{ url_for('crear_producto') }}" class="btn">Añadir Nuevo Producto</a>
+    {% endif %}
+    {#<a href="{{ url_for('exportar_json') }}" class="btn" style="background-color: #3b5998;">Exportar a JSON</a>#}
+</div>
 
 <form class="search-form" method="GET" action="{{ url_for('listar_productos') }}">
-    
     <select name="criterio" id="criterio-busqueda">
         <option value="nombre" {% if criterio == 'nombre' %}selected{% endif %}>Nombre</option>
         <option value="id" {% if criterio == 'id' %}selected{% endif %}>ID de Producto</option>
@@ -24,36 +25,72 @@
 {% if productos %}
 
 <table>
-<thead>
-<tr>
-<th>ID</th>
-<th>Nombre</th>
-<th>Categoría</th>  <th>Cantidad</th>
-<th>Precio</th>
-<th>Acciones</th>
-</tr>
-</thead>
-<tbody>
-{% for producto in productos %}
-<tr>
-<td>{{ producto.id }}</td>
-<td>{{ producto.nombre }}</td>
-<td>{{ producto.categoria_nombre or 'Sin Categoría' }}</td> <td>{{ producto.cantidad }}</td>
-<td>${{ producto.precio }}</td>
-<td>
-{% if current_user.is_authenticated %}
-<a href="{{ url_for('editar_producto', pid=producto.id) }}">Editar</a> |
-<form action="{{ url_for('eliminar_producto', pid=producto.id) }}" method="POST" style="display:inline;">
-<button type="submit" onclick="return confirm('¿Estás seguro de que quieres eliminar este producto?');">Eliminar</button>
-</form>
-{% else %}
-<a href="{{ url_for('login') }}">Ingresar para editar</a>
-{% endif %}
-</td>
-</tr>
-{% endfor %}
-</tbody>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Cantidad</th>
+            <th>Precio</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for producto in productos %}
+        <tr>
+            <td>{{ producto.id }}</td>
+            <td>{{ producto.nombre }}</td>
+            <td>{{ producto.categoria_nombre or 'Sin Categoría' }}</td>
+            <td>{{ producto.cantidad }}</td>
+            <td>${{ "%.2f"|format(producto.precio | float) }}</td>
+            <td>
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('editar_producto', pid=producto.id) }}">Editar</a> |
+                <form action="{{ url_for('eliminar_producto', pid=producto.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" onclick="return confirm('¿Estás seguro de que quieres eliminar este producto?');">Eliminar</button>
+                </form>
+                {% else %}
+                <a href="{{ url_for('login') }}">Ingresar para editar</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
+
+{% if total_pages > 1 %}
+<nav aria-label="Navegación de productos" class="pagination-container mt-4"> 
+    <ul class="pagination">
+        <li class="page-item {% if page == 1 %}disabled{% endif %}">
+            <a class="page-link" 
+               href="{{ url_for('listar_productos', page=page-1, q=q, criterio=criterio) }}">
+               &laquo; Anterior
+            </a>
+        </li>
+        
+        {% for p in range(1, total_pages + 1) %}
+            <li class="page-item {% if p == page %}active{% endif %}">
+                <a class="page-link" 
+                   href="{{ url_for('listar_productos', page=p, q=q, criterio=criterio) }}">
+                   {{ p }}
+                </a>
+            </li>
+        {% endfor %}
+        
+        <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+            <a class="page-link" 
+               href="{{ url_for('listar_productos', page=page+1, q=q, criterio=criterio) }}">
+               Siguiente &raquo;
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<p class="pagination-info">
+    Mostrando **{{ productos | length }}** productos (Página **{{ page }}** de **{{ total_pages }}**). Total general: **{{ total_products }}** productos.
+</p>
+{% endif %}
+
 {% else %}
 <p>No hay productos en el inventario que coincidan con la búsqueda.</p>
 {% endif %}

@@ -355,3 +355,112 @@ table tbody tr:hover {
     align-items: center;
     padding: 0; 
 }
+
+
+
+
+/* ================================================= */
+/* ESTILOS PARA LA PAGINACIÓN (Basado en Bootstrap)  */
+/* ================================================= */
+
+.pagination-container {
+    /* Centra la barra de paginación */
+    display: flex;
+    justify-content: center;
+    margin-top: 30px; /* Separación de la tabla */
+    margin-bottom: 20px;
+}
+
+.pagination {
+    display: flex; /* Alinea los ítems en fila */
+    padding-left: 0;
+    list-style: none; /* Elimina los puntos */
+    border-radius: 0.25rem;
+}
+
+.page-item {
+    margin: 0 2px; /* Pequeña separación entre botones */
+}
+
+.page-link {
+    /* Estilo base del botón */
+    position: relative;
+    display: block;
+    padding: 0.5rem 0.75rem;
+    line-height: 1.25;
+    color: #007bff; /* Color de enlace primario (azul) */
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    text-decoration: none; /* Elimina subrayado */
+    border-radius: 5px; /* Bordes redondeados */
+    transition: all 0.3s ease; /* Transición suave al pasar el mouse */
+}
+
+/* Efecto Hover */
+.page-link:hover {
+    color: #0056b3;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+/* Ítem Activo (página actual) */
+.page-item.active .page-link {
+    z-index: 1;
+    color: #fff; /* Texto blanco */
+    background-color: #5d4037; /* El color de su menú (marrón oscuro) */
+    border-color: #5d4037;
+    cursor: default; /* No permitir clic en la página actual */
+}
+
+/* Ítem Deshabilitado (Anterior/Siguiente) */
+.page-item.disabled .page-link {
+    color: #6c757d; /* Gris para indicar deshabilitado */
+    pointer-events: none; /* Hace que el cursor no cambie */
+    background-color: #fff;
+    border-color: #dee2e6;
+}
+
+/* Estilos de la información de paginación */
+.pagination-info {
+    text-align: center;
+    margin-top: 10px;
+    color: #6c757d; /* Un color gris suave */
+    font-size: 0.9em;
+}
+
+/* Ajuste para que los botones de 'Anterior' y 'Siguiente' se vean más limpios */
+.page-item:first-child .page-link {
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+}
+.page-item:last-child .page-link {
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+
+/* Estilo para que la tabla se vea mejor con la paginación */
+table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+}
+
+table thead th {
+    background-color: #795548; /* Color oscuro para el encabezado de la tabla */
+    color: white;
+    padding: 12px 15px;
+    text-align: left;
+}
+
+table tbody tr:nth-child(even) {
+    background-color: #f8f8f8; /* Raya de cebra para mejor legibilidad */
+}
+
+table tbody tr:hover {
+    background-color: #f1f1f1; /* Efecto hover en las filas */
+}
+
+table td {
+    padding: 10px 15px;
+    border-bottom: 1px solid #ddd;
+}
